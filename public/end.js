@@ -19,14 +19,6 @@ saveHighScore = e => {
         score:mostRecentScore,
         name: username.value
     }
-    highScores.push(score)
-
-    highScores.sort((a,b) => {
-        return b.score - a.score
-
-    })
-    highScores.splice(5)
-
-    localStorage.setItem('highScores', JSON.stringify(highScores))
-    window.location.assign('/')
+    axios.post('http://localhost:4000/api/addToLeaderboard', score).then(()=>alert('added to leaderboard') )
+    localStorage.clear()
 }

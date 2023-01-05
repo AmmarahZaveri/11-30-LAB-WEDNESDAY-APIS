@@ -1,7 +1,17 @@
 const express = require('express')
 const app = express()
-const cors=require('cors')
-
+const cors = require('cors')
+require('dotenv').config()
+const {CONNECTION_URL}= process.env
+const Sequelize = require('sequelize')
+const sequelize = new Sequelize(CONNECTION_URL, {
+    dialect : 'postgres',
+    dialectOptions: {
+        ssl: {
+            rejectUnauthorization:false
+        }
+    }
+});
 
 const corsOptions = {
   exposedHeaders: 'Authorization',
@@ -44,6 +54,14 @@ let questions = [
         choice4: '100',
         answer: 1,
     },
+    {
+        question: "What is the only food that cannot go bad?",
+        choice1: 'Dark chocolate',
+        choice2: 'Peanut Butter',
+        choice3: 'Canned Tuna',
+        choice4: 'Honey',
+        answer: 4,
+    },
 ]
 
 
@@ -52,6 +70,40 @@ app.get('/api/questions', function(req, res){
     res.status(200).send(questions)
 
 })
+
+app.post('/api/seed', function(req,res) {
+    sequelize.query(`
+    create table leaderboard (
+        score_id serial primary key, 
+        username varchar(255),
+        score int
+    );
+    `).then(() => {
+        console.log('seeded')
+        res.sendStatus(200)
+})})
+app.delete('/api/clearLeaderboard',function(req,res){
+    sequelize.query(`
+    DELETE FROM leaderboard;
+    `)
+})
+app.post('/api/addToLeaderboard', function(req,res){
+    let {score, name} = req.body
+    sequelize.query(`
+    insert into leaderboard(username,score)
+    values('${name}','${score}')
+    
+    `).then(res.sendStatus(200))
+
+})
+app.get('/api/getScores', function(req,res){
+    sequelize.query(`
+    select * from leaderboard  
+    order by score DESC  
+    `).then(dbres => res.send(dbres[0]).status(200))
+
+})
+
 app.listen(4000, function(){
     console.log("Server running on 4000")
 })
